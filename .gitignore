@@ -6,3 +6,5 @@ src/generated/prisma
 tsconfig.tsbuildinfo
 .env
 .env.development
+# Ignore all Prisma migrations
+prisma/migrations/
