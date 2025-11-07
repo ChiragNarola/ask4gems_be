@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<title>VVS - Logs</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- Poppins font -->
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link
+		href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+		rel="stylesheet">
+
+	<!-- Bootstrap -->
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet"
+		integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+	<!-- Animate css -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+
+	<!-- Custom style -->
+	<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+	<div id="root"></div>
+
+	<!-- Bootstrap -->
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
+		integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q"
+		crossorigin="anonymous"></script>
+
+	<!-- Moment.js -->
+	<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+
+	<!-- React and ReactDOM -->
+	<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+	<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+
+	<!-- Babel for JSX -->
+	<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+	<script type="text/babel">
+		const { useState, useEffect, useRef } = React;
+
+		//#region JSON Tree
+		// Utility: plain‑object guard
+		const isPlainObject = (obj) => Object.prototype.toString.call(obj) === '[object Object]';
+
+		// Utility: recognises ISO‑like date strings and Date instances
+		const isParsableDate = (value) => {
+			if (value instanceof Date) return true;
+			if (typeof value !== 'string') return false;
+			const date = new Date(value);
+			return !isNaN(date.getTime()) && /^(\d{4}-\d{2}-\d{2})(T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[\+\-]\d{2}:\d{2})?)?$/.test(value);
+		};
+
+		// Primitive / formatted value renderer
+		const formatValue = (value) => {
+			if (value === null) return <span className="json-null">null</span>;
+
+			if (typeof value === 'boolean') {
+				return <span className={`json-boolean json-boolean-${value}`}>{String(value)}</span>;
+			}
+
+			if (typeof value === 'number' || (typeof value === 'string' && !isNaN(Number(value)))) {
+				return <span className="json-number">{String(value)}</span>;
+			}
+
+			if (isParsableDate(value)) {
+				const date = value instanceof Date ? value : new Date(value);
+				return (
+					<span className="json-date">
+						{date.toLocaleString(undefined, {
+							year: 'numeric',
+							month: 'short',
+							day: '2-digit',
+							hour: '2-digit',
+							minute: '2-digit',
+							second: '2-digit',
+						})}
+					</span>
+				);
+			}
+
+			if (typeof value === 'string') {
+				return <span className="json-string" style={{ whiteSpace: 'pre-wrap' }}>{value}</span>;
+			}
+
+			return <span>{String(value)}</span>;
+		};
+
+		// Collapsible node component
+		const CollapsibleNode = ({ label, value, collapsedState, omitNull }) => {
+			const [collapsed, setCollapsed] = useState(collapsedState);
+			const isCollapsible = isPlainObject(value) || Array.isArray(value);
+
+			useEffect(() => {
+				setCollapsed(collapsedState);
+			}, [collapsedState]);
+
+			if (omitNull && value === null) return null;
+
+			const handleToggle = () => setCollapsed(!collapsed);
+
+			return (
+				<li>
+					{isCollapsible ? (
+						<>
+							<i
+								onClick={handleToggle}
+								className={`bi bi-caret-${collapsed ? "right" : "down"}-fill me-2`}
+								style={{ cursor: "pointer", fontSize: "16px", color: "black" }}
+							></i>
+							<span className="key">{label}</span>
+							{collapsed ? (
+								<span className="json-summary text-muted">
+									<i>
+										{Array.isArray(value)
+											? `Array(${value.length})`
+											: `Object(${Object.keys(value).length})`}
+									</i>
+								</span>
+							) : (
+								renderJson(value, collapsedState, omitNull)
+							)}
+						</>
+					) : (
+						<>
+							<span className="key">{label}</span>
+							{formatValue(value)}
+						</>
+					)}
+				</li>
+			);
+		};
+
+		// Recursive renderer
+		const renderJson = (data, collapsedState, omitNull) => {
+			if (Array.isArray(data)) {
+				const items = omitNull ? data.filter((item) => item !== null) : data;
+				return (
+					<ul className="json-array">
+						{items.map((item, idx) => (
+							<CollapsibleNode
+								key={idx}
+								label={idx}
+								value={item}
+								collapsedState={collapsedState}
+								omitNull={omitNull}
+							/>
+						))}
+					</ul>
+				);
+			}
+
+			if (isPlainObject(data)) {
+				const entries = Object.entries(data).filter(([, v]) => !(omitNull && v === null));
+				return (
+					<ul className="json-object">
+						{entries.map(([k, v]) => (
+							<CollapsibleNode
+								key={k}
+								label={k}
+								value={v}
+								collapsedState={collapsedState}
+								omitNull={omitNull}
+							/>
+						))}
+					</ul>
+				);
+			}
+
+			return formatValue(data);
+		};
+
+		// Main JSONTree component (JSX version)
+		const JSONTreeComponent = ({ data, omitNull: omitNullProp = false }) => {
+			const [collapsedState, setCollapsedState] = useState(true);
+			const [omitNull, setOmitNull] = useState(omitNullProp);
+
+			let parsedData = data;
+			if (typeof data === 'string') {
+				try {
+					parsedData = JSON.parse(data);
+				} catch {
+					return <div className="json-tree">{formatValue(data)}</div>;
+				}
+			}
+
+			return (
+				<div className="json-tree">
+					<div className="d-flex align-items-center gap-3 mb-2">
+						<button className="btn btn-secondary btn-sm" onClick={() => setCollapsedState((p) => !p)}>
+							{collapsedState ? 'Expand All' : 'Collapse All'}
+						</button>
+						<label className="form-check d-flex align-items-center">
+							<input
+								type="checkbox"
+								className="form-check-input m-0 p-0 me-2"
+								checked={omitNull}
+								id="chk-omit-null"
+								onChange={(e) => setOmitNull(e.target.checked)}
+							/>
+							<span className="form-check-label">Omit null values</span>
+						</label>
+					</div>
+					{renderJson(parsedData, collapsedState, omitNull)}
+				</div>
+			);
+		};
+		//#endregion
+
+		const LogsViewerComponent = () => {
+			const [logs, setLogs] = useState([]);
+			const [page, setPage] = useState(1);
+			const [pageSize, setPageSize] = useState(100);
+			const [total, setTotal] = useState(0);
+			const [totalPages, setTotalPages] = useState(1);
+			const [search, setSearch] = useState("");
+			const [sortBy, setSortBy] = useState("timestamp");
+			const [sortOrder, setSortOrder] = useState("desc");
+			const [isLoading, setIsLoading] = useState(false);
+			const [error, setError] = useState("");
+			const [debouncedSearch, setDebouncedSearch] = useState(search);
+			const [showModal, setShowModal] = useState(false);
+			const [selectedLog, setSelectedLog] = useState(null);
+			const modalRef = useRef(null);
+
+			const loadLogs = async (pageNumber = 1) => {
+				setError("");
+				setIsLoading(true);
+				const body = {
+					pageNo: pageNumber,
+					pageSize,
+					sort: {
+						key: sortBy,
+						order: sortOrder,
+					},
+					searchKey: debouncedSearch,
+				};
+
+				try {
+					const response = await fetch("/api/logs", {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+						},
+						body: JSON.stringify(body),
+					});
+
+					const result = await response.json();
+
+					if (result.isSuccess === false && result.message) {
+						setError(result.message);
+						setIsLoading(false);
+						setLogs([]);
+						setPage(1);
+						setTotal(0);
+						setTotalPages(1);
+						return;
+					}
+
+					setLogs(result.data.items);
+					setPage(result.data.pageNo);
+					setTotal(result.data.total);
+					setTotalPages(Math.ceil(result.data.total / pageSize));
+					setIsLoading(false);
+				} catch (err) {
+					setIsLoading(false);
+					setError("Something went wrong. Please try again.");
+					setLogs([]);
+					setPage(1);
+					setTotal(0);
+					setTotalPages(1);
+				}
+			};
+
+			const handleSort = (column) => {
+				if (sortBy === column) {
+					setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+				} else {
+					setSortBy(column);
+					setSortOrder("asc");
+				}
+				loadLogs(1);
+			};
+
+			const handleLogClick = (log) => {
+				setSelectedLog(log);
+				setShowModal(true);
+			};
+
+			useEffect(() => {
+				const delayDebounce = setTimeout(() => {
+					setDebouncedSearch(search);
+				}, 500);
+
+				return () => clearTimeout(delayDebounce);
+			}, [search]);
+
+			useEffect(() => {
+				loadLogs(1);
+
+				const modalElement = modalRef.current;
+
+				const handleHidden = () => setShowModal(false);
+
+				if (modalElement)
+					modalElement.addEventListener("hidden.bs.modal", handleHidden);
+
+				return () => {
+					if (modalElement)
+						modalElement.removeEventListener("hidden.bs.modal", handleHidden);
+				};
+			}, []);
+
+			useEffect(() => {
+				loadLogs(1);
+			}, [debouncedSearch, sortBy, sortOrder, pageSize]);
+
+			useEffect(() => {
+				if (modalRef.current) {
+					const modal = new bootstrap.Modal(modalRef.current);
+					if (showModal) modal.show();
+					else modal.hide();
+				}
+			}, [showModal]);
+
+			return (
+				<>
+					<div className="container fade-in-animation">
+						<div className="card logs position-relative">
+							<div className={`loader-container ${isLoading ? "enter" : "exit"}`}>
+								<div>
+									<img src="/images/logo.svg" alt="logo" />
+									<div className="loader"></div>
+								</div>
+							</div>
+
+							<div className="card-header d-flex align-items-center gap-2">
+								<a className="btn btn-danger btn-sm" href="/">
+									<i className="bi bi-arrow-left me-1"></i>
+									Back
+								</a>
+								<div className="card-title flex-grow-1">Logs Viewer</div>
+								<div className="w-25">
+									<input
+										className="form-control"
+										placeholder="Search logs..."
+										value={search}
+										onChange={(e) => setSearch(e.target.value)}
+									/>
+								</div>
+							</div>
+
+							<div className="card-body">
+								{error && (
+									<div
+										className="alert alert-danger fade-in-animation"
+										role="alert"
+									>
+										{error}
+									</div>
+								)}
+
+								{logs && logs.length > 0 && (
+									<table className="table table-hover table-sm fade-in-animation">
+										<thead className="sticky-top" style={{ top: "-1rem" }}>
+											<tr>
+												<th
+													style={{ width: "250px" }}
+													onClick={() => handleSort("timestamp")}
+												>
+													Timestamp
+													{sortBy === "timestamp" ? (
+														sortOrder === "asc" ? (
+															<i className="bi bi-chevron-up ms-1"></i>
+														) : (
+															<i className="bi bi-chevron-down ms-1"></i>
+														)
+													) : (
+														<i className="bi bi-chevron-expand ms-1 text-muted"></i>
+													)}
+												</th>
+												<th
+													style={{ textAlign: "start", width: "100px" }}
+													onClick={() => handleSort("level")}
+												>
+													Level
+													{sortBy === "level" ? (
+														sortOrder === "asc" ? (
+															<i className="bi bi-chevron-up ms-1"></i>
+														) : (
+															<i className="bi bi-chevron-down ms-1"></i>
+														)
+													) : (
+														<i className="bi bi-chevron-expand ms-1 text-muted"></i>
+													)}
+												</th>
+												<th onClick={() => handleSort("message")}>
+													Message
+													{sortBy === "message" ? (
+														sortOrder === "asc" ? (
+															<i className="bi bi-chevron-up ms-1"></i>
+														) : (
+															<i className="bi bi-chevron-down ms-1"></i>
+														)
+													) : (
+														<i className="bi bi-chevron-expand ms-1 text-muted"></i>
+													)}
+												</th>
+											</tr>
+										</thead>
+										<tbody>
+											{logs.map((log) => (
+												<tr
+													key={log.id}
+													onClick={() => handleLogClick(log)}
+													style={{ cursor: "pointer" }}
+												>
+													<td>
+														{moment(log.timestamp).format(
+															"MMM, DD YYYY hh:mm:ss a"
+														)}
+													</td>
+													<td align="start">
+														{log.level === "ERROR" && (
+															<span className="badge badge-sm bg-danger">
+																{log.level}
+															</span>
+														)}
+														{log.level === "WARN" && (
+															<span className="badge badge-sm bg-warning">
+																{log.level}
+															</span>
+														)}
+														{log.level === "INFO" && (
+															<span className="badge badge-sm bg-info">
+																{log.level}
+															</span>
+														)}
+													</td>
+													<td>{log.message}</td>
+												</tr>
+											))}
+										</tbody>
+									</table>
+								)}
+
+								{!isLoading && !error && logs.length === 0 && (
+									<div className="alert alert-info fade-in-animation" role="alert">
+										No logs found.
+									</div>
+								)}
+							</div>
+
+							<div className="card-footer grid-container fade-in-animation">
+								<div
+									className="d-flex justify-content-start"
+									style={{ fontSize: "16px" }}
+								>
+									<b className="me-2">Total:</b>
+									{total}{" "}
+									{total > 0 && (
+										<small className="ms-1">
+											<i>
+												(Showing {(page - 1) * pageSize + 1} to{" "}
+												{Math.min(page * pageSize, total)})
+											</i>
+										</small>
+									)}
+								</div>
+
+								<ul className="pagination">
+									{/* First page */}
+									<li className={`page-item ${page === 1 ? "disabled" : ""}`}>
+										<button className="page-link" onClick={() => loadLogs(1)}>
+											<i className="bi bi-chevron-double-left"></i>
+										</button>
+									</li>
+
+									{/* Previous */}
+									<li className={`page-item ${page === 1 ? "disabled" : ""}`}>
+										<button
+											className="page-link"
+											onClick={() => loadLogs(page - 1)}
+										>
+											<i className="bi bi-chevron-left"></i>
+										</button>
+									</li>
+
+									{/* Dynamic Page Numbers */}
+									{(() => {
+										const pagesToShow = 7;
+										let start = Math.max(1, page - Math.floor(pagesToShow / 2));
+										let end = start + pagesToShow - 1;
+
+										if (end > totalPages) {
+											end = totalPages;
+											start = Math.max(1, end - pagesToShow + 1);
+										}
+
+										return Array.from({ length: end - start + 1 }, (_, i) => {
+											const pageNum = start + i;
+											return (
+												<li
+													key={pageNum}
+													className={`page-item ${pageNum === page ? "active" : ""
+														}`}
+												>
+													<button
+														className="page-link"
+														onClick={() => loadLogs(pageNum)}
+													>
+														{pageNum}
+													</button>
+												</li>
+											);
+										});
+									})()}
+
+									{/* Next */}
+									<li
+										className={`page-item ${page === totalPages ? "disabled" : ""}`}
+									>
+										<button
+											className="page-link"
+											onClick={() => loadLogs(page + 1)}
+										>
+											<i className="bi bi-chevron-right"></i>
+										</button>
+									</li>
+
+									{/* Last page */}
+									<li
+										className={`page-item ${page === totalPages ? "disabled" : ""}`}
+									>
+										<button
+											className="page-link"
+											onClick={() => loadLogs(totalPages)}
+										>
+											<i className="bi bi-chevron-double-right"></i>
+										</button>
+									</li>
+								</ul>
+
+								<div className="d-flex align-items-center justify-content-end gap-2">
+									<span style={{ fontSize: "16px" }}>Page size:</span>
+									<select
+										className="form-select form-select-sm"
+										style={{ width: "auto" }}
+										value={pageSize}
+										onChange={(e) => {
+											const newSize = parseInt(e.target.value);
+											setPageSize(newSize);
+										}}
+									>
+										{[5, 10, 20, 50, 100, 200].map((size) => (
+											<option key={size} value={size}>
+												{size}
+											</option>
+										))}
+									</select>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div
+						className="modal fade"
+						tabIndex="-1"
+						data-bs-scroll="true"
+						ref={modalRef}
+					>
+						<div className="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+							<div className="modal-content">
+								<div className={`modal-header`}>
+									<h5 className="modal-title">Log Details</h5>
+									<button
+										type="button"
+										className="btn-close"
+										data-bs-dismiss="modal"
+										aria-label="Close"
+									/>
+								</div>
+								<div className="modal-body">
+									{selectedLog ? (
+										<table className="table table-bordered">
+											<tbody>
+												<tr>
+													<th
+														valign="top"
+														style={{ verticalAlign: "top", width: "150px" }}
+													>
+														Timestamp
+													</th>
+													<td>
+														{moment(selectedLog.timestamp).format(
+															"MMMM DD, YYYY hh:mm:ss a"
+														)}
+													</td>
+												</tr>
+												<tr>
+													<th
+														valign="top"
+														style={{ verticalAlign: "top", width: "150px" }}
+													>
+														Level
+													</th>
+													<td>
+														{selectedLog.level === "ERROR" && (
+															<span className="badge bg-danger">
+																{selectedLog.level}
+															</span>
+														)}
+														{selectedLog.level === "WARN" && (
+															<span className="badge bg-warning">
+																{selectedLog.level}
+															</span>
+														)}
+														{selectedLog.level === "INFO" && (
+															<span className="badge bg-info">
+																{selectedLog.level}
+															</span>
+														)}
+													</td>
+												</tr>
+												<tr>
+													<th
+														valign="top"
+														style={{ verticalAlign: "top", width: "150px" }}
+													>
+														Message
+													</th>
+													<td>{selectedLog.message}</td>
+												</tr>
+												{selectedLog.data && (
+													<tr>
+														<th
+															valign="top"
+															style={{ verticalAlign: "top", width: "150px" }}
+														>
+															Data
+														</th>
+														<td>
+															<JSONTreeComponent data={selectedLog.data} />
+														</td>
+													</tr>
+												)}
+											</tbody>
+										</table>
+									) : (
+										<p>No log selected.</p>
+									)}
+								</div>
+							</div>
+						</div>
+					</div>
+				</>
+			);
+		}
+
+		ReactDOM.createRoot(document.getElementById("root")).render(<LogsViewerComponent />);
+	</script>
+</body>
+
+</html>

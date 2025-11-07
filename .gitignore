@@ -1,0 +1,8 @@
+node_modules/
+build/
+logs/
+temp/
+src/generated/prisma
+tsconfig.tsbuildinfo
+.env
+.env.development

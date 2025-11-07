@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8" />
+	<title>VVS - DB Stats</title>
+
+	<!-- Poppins font -->
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link
+		href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+		rel="stylesheet">
+
+	<!-- Bootstrap -->
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet"
+		integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+	<!-- Animate css -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+
+	<!-- Custom style -->
+	<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+	<div id="root"></div>
+
+	<!-- Bootstrap -->
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
+		integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q"
+		crossorigin="anonymous"></script>
+
+	<!-- Moment.js -->
+	<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+
+	<!-- React and ReactDOM -->
+	<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+	<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+
+	<!-- Babel for JSX -->
+	<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+	<script type="text/babel">
+		const DBStats = () => {
+			const [data, setData] = React.useState(null);
+
+			React.useEffect(() => {
+				fetch('/api/stats/db')
+					.then(res => res.json())
+					.then(d => {
+						if (d.isSuccess) setData(d.data);
+						console.log(d.data);
+					})
+					.catch(error => {
+						console.error("Error fetching db stats info:", error);
+						setData({ error: "Failed to load db stats." });
+					});
+			}, []);
+
+			return (
+				<div className="container d-flex justify-content-center">
+					<div className="card fade-in-animation" style={{ width: '600px' }}>
+
+						{/* Loader */}
+						{
+							!data &&
+							<div className="card-body position-relative d-flex flex-column align-items-center p-4" style={{ height: "250px" }}>
+								<div className={`loader-container enter`}>
+									<div>
+										<img src="/images/logo.svg" alt="logo" />
+										<div className="loader"></div>
+									</div>
+									<div className="fw-bold">Loading db stats...</div>
+								</div>
+							</div>
+						}
+
+						{/* Error */}
+						{
+							data && data.error &&
+							<div className="card-body d-flex flex-column align-items-center text-danger p-4">
+								<i className="bi bi-exclamation-triangle-fill" style={{ height: "4rem", fontSize: "4rem" }}></i>
+								<div className="mt-4">{data.error}</div>
+							</div>
+						}
+
+						{/* Content */}
+						{
+							data && !data.error &&
+							<>
+								<div className="card-header d-flex align-items-center gap-2">
+									<a className="btn btn-danger btn-sm" href="/">
+										<i className="bi bi-arrow-left me-1"></i>
+										Back
+									</a>
+									<div className="card-title flex-grow-1">DB Stats</div>
+									<div className="justify-self-end">
+										<strong>Total DB Size:</strong> {data.dbSize}
+									</div>
+								</div>
+
+								<div className="card-body p-4">
+									<table className="table table-striped table-hover table-sm">
+										<thead className="table-light">
+											<tr>
+												<th>Table Name</th>
+												<th className="text-end">Rows</th>
+												<th className="text-end">Size</th>
+											</tr>
+										</thead>
+										<tbody>
+											{data.tables.map((t, idx) => (
+												<tr key={idx}>
+													<td>{t.name}</td>
+													<td className="text-end">{t.actualRowCount.toLocaleString()}</td>
+													<td className="text-end">{t.size}</td>
+												</tr>
+											))}
+										</tbody>
+									</table>
+								</div>
+							</>
+						}
+					</div>
+				</div>
+			);
+		};
+
+		ReactDOM.createRoot(document.getElementById('root')).render(<DBStats />);
+	</script>
+</body>
+
+</html>

@@ -1,0 +1,453 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//////////////////////
+// ENUM DEFINITIONS //
+//////////////////////
+
+enum ActivityLevel {
+  INFO
+  WARNING
+  ERROR
+  DEBUG
+}
+
+enum UserType {
+  User
+  Admin
+}
+
+//////////////////////
+// USER MANAGEMENT  //
+//////////////////////
+
+model User {
+  id                  Int       @id @default(autoincrement())
+  firstName           String    @db.VarChar(100)
+  lastName            String    @db.VarChar(100)
+  companyName         String?   @db.VarChar(150)
+  phone               String?   @db.VarChar(50)
+  email               String    @unique @db.VarChar(150)
+  passwordHash        String    @db.VarChar(255)
+  emailVerified       Boolean   @default(false)
+  verificationToken   String?   @db.VarChar(255)
+  passwordResetToken  String?   @db.VarChar(255)
+  passwordResetExpiry DateTime?
+  failedLoginAttempts Int       @default(0)
+  lockoutUntil        DateTime?
+  countryId           Int?
+  country             Country?  @relation(fields: [countryId], references: [id])
+  isActive            Boolean   @default(true)
+  userType            UserType  @default(User)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime?
+  isDeleted           Boolean   @default(false)
+  deletedAt           DateTime?
+
+  // Relations
+  gemRequests       GemRequest[]
+  gemMastersCreated GemMaster[]   @relation("GemMasterCreatedBy")
+  activityLogs      ActivityLog[]
+}
+
+//////////////////////
+// ACTIVITY LOGS    //
+//////////////////////
+
+model ActivityLog {
+  id        String        @id @default(uuid())
+  level     ActivityLevel
+  message   String?
+  data      Json?
+  createdAt DateTime      @default(now())
+
+  userId Int?
+  user   User? @relation(fields: [userId], references: [id])
+}
+
+//////////////////////
+// MASTER TABLES    //
+//////////////////////
+
+model GemType {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(255)
+  createdAt DateTime  @default(now())
+  createdBy Int?
+  updatedAt DateTime? @updatedAt
+  updatedBy Int?
+  isDeleted Boolean   @default(false)
+  deletedBy Int?
+  deletedAt DateTime?
+
+  gemMasters  GemMaster[]
+  gemRequests GemRequest[]
+}
+
+model Shape {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(255)
+  createdAt DateTime  @default(now())
+  createdBy Int?
+  updatedAt DateTime? @updatedAt
+  updatedBy Int?
+  isDeleted Boolean   @default(false)
+  deletedBy Int?
+  deletedAt DateTime?
+
+  gemMasters  GemMaster[]
+  gemRequests GemRequest[]
+}
+
+model Color {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(255)
+  createdAt DateTime  @default(now())
+  createdBy Int?
+  updatedAt DateTime? @updatedAt
+  updatedBy Int?
+  isDeleted Boolean   @default(false)
+  deletedBy Int?
+  deletedAt DateTime?
+
+  gemMasters  GemMaster[]
+  gemRequests GemRequest[]
+}
+
+model Clarity {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(255)
+  createdAt DateTime  @default(now())
+  createdBy Int?
+  updatedAt DateTime? @updatedAt
+  updatedBy Int?
+  isDeleted Boolean   @default(false)
+  deletedBy Int?
+  deletedAt DateTime?
+
+  gemMasters  GemMaster[]
+  gemRequests GemRequest[]
+}
+
+model CutPolish {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(255)
+  createdAt DateTime  @default(now())
+  createdBy Int?
+  updatedAt DateTime? @updatedAt
+  updatedBy Int?
+  isDeleted Boolean   @default(false)
+  deletedBy Int?
+  deletedAt DateTime?
+
+  gemMasters  GemMaster[]
+  gemRequests GemRequest[]
+}
+
+model Saturation {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(255)
+  createdAt DateTime  @default(now())
+  createdBy Int?
+  updatedAt DateTime? @updatedAt
+  updatedBy Int?
+  isDeleted Boolean   @default(false)
+  deletedBy Int?
+  deletedAt DateTime?
+
+  gemMasters  GemMaster[]
+  gemRequests GemRequest[]
+}
+
+model Treatment {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(255)
+  createdAt DateTime  @default(now())
+  createdBy Int?
+  updatedAt DateTime? @updatedAt
+  updatedBy Int?
+  isDeleted Boolean   @default(false)
+  deletedBy Int?
+  deletedAt DateTime?
+
+  gemMasters  GemMaster[]
+  gemRequests GemRequest[]
+}
+
+model CuttingStyle {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(255)
+  createdAt DateTime  @default(now())
+  createdBy Int?
+  updatedAt DateTime? @updatedAt
+  updatedBy Int?
+  isDeleted Boolean   @default(false)
+  deletedBy Int?
+  deletedAt DateTime?
+
+  gemMasters  GemMaster[]
+  gemRequests GemRequest[]
+}
+
+model Effect {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(255)
+  createdAt DateTime  @default(now())
+  createdBy Int?
+  updatedAt DateTime? @updatedAt
+  updatedBy Int?
+  isDeleted Boolean   @default(false)
+  deletedBy Int?
+  deletedAt DateTime?
+
+  gemMasters  GemMaster[]
+  gemRequests GemRequest[]
+}
+
+model Transparency {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(255)
+  createdAt DateTime  @default(now())
+  createdBy Int?
+  updatedAt DateTime? @updatedAt
+  updatedBy Int?
+  isDeleted Boolean   @default(false)
+  deletedBy Int?
+  deletedAt DateTime?
+
+  gemMasters  GemMaster[]
+  gemRequests GemRequest[]
+}
+
+model Texture {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(255)
+  createdAt DateTime  @default(now())
+  createdBy Int?
+  updatedAt DateTime? @updatedAt
+  updatedBy Int?
+  isDeleted Boolean   @default(false)
+  deletedBy Int?
+  deletedAt DateTime?
+
+  gemMasters  GemMaster[]
+  gemRequests GemRequest[]
+}
+
+model Fluorescence {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(255)
+  createdAt DateTime  @default(now())
+  createdBy Int?
+  updatedAt DateTime? @updatedAt
+  updatedBy Int?
+  isDeleted Boolean   @default(false)
+  deletedBy Int?
+  deletedAt DateTime?
+
+  gemMasters  GemMaster[]
+  gemRequests GemRequest[]
+}
+
+model Origin {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(255)
+  createdAt DateTime  @default(now())
+  createdBy Int?
+  updatedAt DateTime? @updatedAt
+  updatedBy Int?
+  isDeleted Boolean   @default(false)
+  deletedBy Int?
+  deletedAt DateTime?
+
+  gemMasters  GemMaster[]
+  gemRequests GemRequest[]
+}
+
+model Appellation {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(255)
+  createdAt DateTime  @default(now())
+  createdBy Int?
+  updatedAt DateTime? @updatedAt
+  updatedBy Int?
+  isDeleted Boolean   @default(false)
+  deletedBy Int?
+  deletedAt DateTime?
+
+  gemMasters  GemMaster[]
+  gemRequests GemRequest[]
+}
+
+model Country {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(255)
+  createdAt DateTime  @default(now())
+  createdBy Int?
+  updatedAt DateTime? @updatedAt
+  updatedBy Int?
+  isDeleted Boolean   @default(false)
+  deletedBy Int?
+  deletedAt DateTime?
+
+  users            User[]
+  buyerGemMasters  GemMaster[]  @relation("BuyerCountry_GemMaster")
+  buyerGemRequests GemRequest[] @relation("BuyerCountry_GemRequest")
+}
+
+model BuyType {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(255)
+  createdAt DateTime  @default(now())
+  createdBy Int?
+  updatedAt DateTime? @updatedAt
+  updatedBy Int?
+  isDeleted Boolean   @default(false)
+  deletedBy Int?
+  deletedAt DateTime?
+
+  gemRequests GemRequest[]
+}
+
+model LabReport {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(255)
+  createdAt DateTime  @default(now())
+  createdBy Int?
+  updatedAt DateTime? @updatedAt
+  updatedBy Int?
+  isDeleted Boolean   @default(false)
+  deletedBy Int?
+  deletedAt DateTime?
+
+  gemMasters  GemMaster[]
+  gemRequests GemRequest[]
+}
+
+//////////////////////
+// GEM MASTER TABLES//
+//////////////////////
+
+model GemMaster {
+  id             Int       @id @default(autoincrement())
+  gemTypeId      Int
+  shapeId        Int
+  colorId        Int
+  clarityId      Int
+  cutPolishId    Int
+  saturationId   Int
+  treatmentId    Int
+  cuttingStyleId Int
+  effectId       Int
+  transparencyId Int
+  textureId      Int
+  fluorescenceId Int
+  originId       Int
+  appellationId  Int
+  buyerCountryId Int
+  labReportId    Int
+  calibrated     Boolean?
+  weight         Decimal?
+  length         Decimal?
+  width          Decimal?
+  budget         Decimal?
+  quantity       Int?
+  createdAt      DateTime  @default(now())
+  createdBy      Int
+  updatedAt      DateTime? @updatedAt
+  updatedBy      Int?
+  isDeleted      Boolean   @default(false)
+  deletedBy      Int?
+  deletedAt      DateTime?
+
+  // Relations
+  gemType       GemType      @relation(fields: [gemTypeId], references: [id])
+  shape         Shape        @relation(fields: [shapeId], references: [id])
+  color         Color        @relation(fields: [colorId], references: [id])
+  clarity       Clarity      @relation(fields: [clarityId], references: [id])
+  cutPolish     CutPolish    @relation(fields: [cutPolishId], references: [id])
+  saturation    Saturation   @relation(fields: [saturationId], references: [id])
+  treatment     Treatment    @relation(fields: [treatmentId], references: [id])
+  cuttingStyle  CuttingStyle @relation(fields: [cuttingStyleId], references: [id])
+  effect        Effect       @relation(fields: [effectId], references: [id])
+  transparency  Transparency @relation(fields: [transparencyId], references: [id])
+  texture       Texture      @relation(fields: [textureId], references: [id])
+  fluorescence  Fluorescence @relation(fields: [fluorescenceId], references: [id])
+  origin        Origin       @relation(fields: [originId], references: [id])
+  appellation   Appellation  @relation(fields: [appellationId], references: [id])
+  buyerCountry  Country      @relation("BuyerCountry_GemMaster", fields: [buyerCountryId], references: [id])
+  labReport     LabReport    @relation(fields: [labReportId], references: [id])
+  createdByUser User         @relation("GemMasterCreatedBy", fields: [createdBy], references: [id])
+}
+
+//////////////////////
+// GEM REQUESTS     //
+//////////////////////
+
+model GemRequest {
+  id             Int       @id @default(autoincrement())
+  buyerId        Int
+  gemTypeId      Int
+  shapeId        Int?
+  colorId        Int?
+  clarityId      Int?
+  cutPolishId    Int?
+  saturationId   Int?
+  treatmentId    Int?
+  cuttingStyleId Int?
+  effectId       Int?
+  transparencyId Int?
+  textureId      Int?
+  fluorescenceId Int?
+  originId       Int?
+  appellationId  Int?
+  buyerCountryId Int
+  labReportId    Int?
+  calibrated     Boolean?
+  cuttingQuality String?
+  weightFrom     Decimal?
+  weightTo       Decimal?
+  lengthFrom     Decimal?
+  lengthTo       Decimal?
+  widthFrom      Decimal?
+  widthTo        Decimal?
+  budgetFrom     Decimal?
+  budgetTo       Decimal?
+  quantity       Int?
+  buyTypeId      Int
+  requestDate    DateTime
+  reference      String?
+  createdAt      DateTime  @default(now())
+  createdBy      Int
+  updatedAt      DateTime?
+  updatedBy      Int?
+  isDeleted      Boolean   @default(false)
+  deletedBy      Int?
+  deletedAt      DateTime?
+
+  // Relations
+  buyer        User          @relation(fields: [buyerId], references: [id])
+  gemType      GemType       @relation(fields: [gemTypeId], references: [id])
+  shape        Shape?        @relation(fields: [shapeId], references: [id])
+  color        Color?        @relation(fields: [colorId], references: [id])
+  clarity      Clarity?      @relation(fields: [clarityId], references: [id])
+  cutPolish    CutPolish?    @relation(fields: [cutPolishId], references: [id])
+  saturation   Saturation?   @relation(fields: [saturationId], references: [id])
+  treatment    Treatment?    @relation(fields: [treatmentId], references: [id])
+  cuttingStyle CuttingStyle? @relation(fields: [cuttingStyleId], references: [id])
+  effect       Effect?       @relation(fields: [effectId], references: [id])
+  transparency Transparency? @relation(fields: [transparencyId], references: [id])
+  texture      Texture?      @relation(fields: [textureId], references: [id])
+  fluorescence Fluorescence? @relation(fields: [fluorescenceId], references: [id])
+  origin       Origin?       @relation(fields: [originId], references: [id])
+  appellation  Appellation?  @relation(fields: [appellationId], references: [id])
+  buyerCountry Country       @relation("BuyerCountry_GemRequest", fields: [buyerCountryId], references: [id])
+  labReport    LabReport?    @relation(fields: [labReportId], references: [id])
+  buyType      BuyType       @relation(fields: [buyTypeId], references: [id])
+}
